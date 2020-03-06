@@ -2,7 +2,7 @@ import telebot
 import model_handler
 import os
 
-TOKEN = 'YOUR_TOKEN'
+TOKEN = 'YOUR TOKEN'
 bot = telebot.TeleBot(TOKEN)
 model = model_handler.get_model()
 
@@ -18,7 +18,7 @@ def handle_docs_photo(message):
 		src='tmp/'+file_info.file_path;
 		with open(src, 'wb') as new_file:
 			new_file.write(downloaded_file)
-		result = model_handler.bottleneck_predict_image(model, src)
+		result = model_handler.predict_image(model, src)
 		os.remove(src) if os.path.exists(src) else None
 		bot.reply_to(message, "Looks like {}".format(result.replace('_',' ')))
 	except:
