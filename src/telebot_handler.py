@@ -1,8 +1,10 @@
 import telebot
 import model_handler
 import os
+from flask import Flask, request
+import logging
 
-TOKEN = 'YOUR TOKEN'
+TOKEN = os.environ.get('TELEGRAM_TOKEN')
 bot = telebot.TeleBot(TOKEN)
 model = model_handler.get_model()
 
@@ -27,11 +29,27 @@ def handle_docs_photo(message):
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
-    bot.reply_to(message, "To use the bot, send a doggie photo")
-
+	bot.reply_to(message, "To use the bot, send a doggie photo")
 
 @bot.message_handler(content_types=['document'])
 def send_text(message):
-    bot.reply_to(message, "Please send as a photo, not as a document")
+	bot.reply_to(message, "Please send as a photo, not as a document")
 
-bot.polling()
+if "HEROKU_APP_NAME" in list(os.environ.keys()):
+	logger = telebot.logger
+	telebot.logger.setLevel(logging.INFO)
+
+	server = Flask(__name__)
+	@server.route("/bot", methods=['POST'])
+	def getMessage():
+		bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+		return "!", 200
+	@server.route("/")
+	def webhook():
+		bot.remove_webhook()
+		bot.set_webhook(url="https://"+os.environ.get("HEROKU_APP_NAME")+".herokuapp.com/bot")
+		return "?", 200
+	server.run(host="0.0.0.0", port=os.environ.get('PORT', 80))
+else:
+	bot.remove_webhook()
+	bot.polling(none_stop=True)
